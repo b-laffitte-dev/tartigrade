@@ -25,7 +25,7 @@ tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
 
 # Database
-sqlx = { version = "0.7", features = ["postgres", "uuid", "chrono", "runtime-tokio-native-tls", "json", "migrate"] }
+sqlx = { version = "0.8", features = ["postgres", "uuid", "chrono", "runtime-tokio-native-tls", "json", "migrate"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -63,7 +63,7 @@ testcontainers-modules = { version = "0.1", features = ["postgres"] }
 serial_test = "2.0"
 
 # SQLx test utilities
-sqlx = { version = "0.7", features = ["postgres", "uuid", "chrono", "runtime-tokio-native-tls", "json", "migrate"] }
+sqlx = { version = "0.8", features = ["postgres", "uuid", "chrono", "runtime-tokio-native-tls", "json", "migrate"] }
 
 # Tarpaulin for coverage
 # Note: tarpaulin is installed separately via cargo-install
