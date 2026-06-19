@@ -84,14 +84,3 @@ integration-test = []
 [package.metadata.sqlx]
 database-url = "postgres://user:password@localhost:5432/tardigrade"
 migrate-dir = "migrations"
-
-[profile.dev.package.sqlx-macros]
-# Disable sqlx online mode in development
-# This is a workaround for when we don't have a running database
-# In production, you should remove this and have a running DB
-opt-level = 3
-
-# Alternative: Use offline mode
-#[cfg(feature = "offline")]
-[env]
-SQLX_OFFLINE = "true"
