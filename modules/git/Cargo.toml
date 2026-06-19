@@ -1,0 +1,97 @@
+[package]
+name = "tardigrade-git"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tardigrade-CI Team"]
+description = "Git module for Tardigrade-CI"
+license = "AGPL-3.0"
+readme = "README.md"
+keywords = ["git", "ci", "tardigrade"]
+categories = ["development-tools", "version-control"]
+
+[lib]
+name = "tardigrade_git"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tardigrade-git"
+path = "src/main.rs"
+
+[dependencies]
+# Web framework
+axum = { version = "0.7", features = ["json", "multipart", "ws"] }
+tokio = { version = "1.0", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+
+# Database
+sqlx = { version = "0.7", features = ["postgres", "uuid", "chrono", "runtime-tokio-native-tls", "json", "migrate"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# UUID
+uuid = { version = "1.4", features = ["v4", "serde"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Async traits
+async-trait = "0.1"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Configuration
+config = "0.13"
+dotenv = "0.15"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json"] }
+
+[dev-dependencies]
+# Testing
+mockall = "0.11"
+testcontainers = "0.15"
+testcontainers-modules = { version = "0.1", features = ["postgres"] }
+serial_test = "2.0"
+
+# SQLx test utilities
+sqlx = { version = "0.7", features = ["postgres", "uuid", "chrono", "runtime-tokio-native-tls", "json", "migrate"] }
+
+# Tarpaulin for coverage
+# Note: tarpaulin is installed separately via cargo-install
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+
+[features]
+default = []
+integration-test = []
+
+[package.metadata.sqlx]
+database-url = "postgres://user:password@localhost:5432/tardigrade"
+migrate-dir = "migrations"
+
+[profile.dev.package.sqlx-macros]
+# Disable sqlx online mode in development
+# This is a workaround for when we don't have a running database
+# In production, you should remove this and have a running DB
+opt-level = 3
+
+# Alternative: Use offline mode
+#[cfg(feature = "offline")]
+[env]
+SQLX_OFFLINE = "true"
