@@ -1,0 +1,208 @@
+syntax = "proto3";
+
+package git;
+
+option go_package = "./;git";
+
+// GitService provides gRPC methods for managing Git repositories, branches, and commits
+service GitService {
+  // Repository operations
+  rpc CreateRepository (CreateRepositoryRequest) returns (RepositoryResponse);
+  rpc GetRepository (GetRepositoryRequest) returns (RepositoryResponse);
+  rpc ListRepositories (ListRepositoriesRequest) returns (ListRepositoriesResponse);
+  rpc UpdateRepository (UpdateRepositoryRequest) returns (RepositoryResponse);
+  rpc DeleteRepository (DeleteRepositoryRequest) returns (DeleteResponse);
+
+  // Branch operations
+  rpc CreateBranch (CreateBranchRequest) returns (BranchResponse);
+  rpc GetBranch (GetBranchRequest) returns (BranchResponse);
+  rpc ListBranches (ListBranchesRequest) returns (ListBranchesResponse);
+  rpc DeleteBranch (DeleteBranchRequest) returns (DeleteResponse);
+
+  // Commit operations
+  rpc CreateCommit (CreateCommitRequest) returns (CommitResponse);
+  rpc GetCommit (GetCommitRequest) returns (CommitResponse);
+  rpc ListCommits (ListCommitsRequest) returns (ListCommitsResponse);
+
+  // Clone and push operations
+  rpc CloneRepository (CloneRepositoryRequest) returns (CloneRepositoryResponse);
+  rpc PushToRepository (PushRequest) returns (PushResponse);
+}
+
+// ============================================================================
+// Repository Messages
+// ============================================================================
+
+message CreateRepositoryRequest {
+  string name = 1;
+  optional string description = 2;
+  bool is_private = 3;
+  string default_branch = 4;
+  string owner_id = 5;  // User ID who owns the repository
+}
+
+message GetRepositoryRequest {
+  string repository_id = 1;
+}
+
+message ListRepositoriesRequest {
+  optional string owner_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message UpdateRepositoryRequest {
+  string repository_id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional bool is_private = 4;
+  optional string default_branch = 5;
+}
+
+message DeleteRepositoryRequest {
+  string repository_id = 1;
+  string owner_id = 2;  // For permission verification
+}
+
+message RepositoryResponse {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  bool is_private = 4;
+  string owner_id = 5;
+  string default_branch = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message ListRepositoriesResponse {
+  repeated RepositoryResponse repositories = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+  int32 total_pages = 5;
+}
+
+message DeleteResponse {
+  bool success = 1;
+}
+
+// ============================================================================
+// Branch Messages
+// ============================================================================
+
+message CreateBranchRequest {
+  string repository_id = 1;
+  string name = 2;
+  optional string commit_hash = 3;  // Initial commit hash
+  string owner_id = 4;  // For permission verification
+}
+
+message GetBranchRequest {
+  string branch_id = 1;
+}
+
+message ListBranchesRequest {
+  string repository_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message DeleteBranchRequest {
+  string repository_id = 1;
+  string branch_name = 2;
+  string owner_id = 3;  // For permission verification
+}
+
+message BranchResponse {
+  string id = 1;
+  string repository_id = 2;
+  string name = 3;
+  string commit_hash = 4;
+  string created_at = 5;
+}
+
+message ListBranchesResponse {
+  repeated BranchResponse branches = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+  int32 total_pages = 5;
+}
+
+// ============================================================================
+// Commit Messages
+// ============================================================================
+
+message CreateCommitRequest {
+  string repository_id = 1;
+  string branch_name = 2;
+  string message = 3;
+  string author_name = 4;
+  string author_email = 5;
+  string committer_id = 6;  // User ID making the commit
+  string committer_name = 7;
+  string committer_email = 8;
+}
+
+message GetCommitRequest {
+  string commit_id = 1;
+}
+
+message ListCommitsRequest {
+  string repository_id = 1;
+  string branch_name = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message CommitResponse {
+  string id = 1;
+  string repository_id = 2;
+  string hash = 3;
+  string message = 4;
+  string author_name = 5;
+  string author_email = 6;
+  string committer_name = 7;
+  string committer_email = 8;
+  string created_at = 9;
+}
+
+message ListCommitsResponse {
+  repeated CommitResponse commits = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+  int32 total_pages = 5;
+}
+
+// ============================================================================
+// Clone and Push Messages
+// ============================================================================
+
+message CloneRepositoryRequest {
+  string repository_id = 1;
+  string user_id = 2;  // For permission checks
+  string method = 3;   // "ssh" or "https"
+}
+
+message CloneRepositoryResponse {
+  string url = 1;  // SSH or HTTPS URL
+  bool success = 2;
+  optional string error = 3;
+}
+
+message PushRequest {
+  string repository_id = 1;
+  string branch_name = 2;
+  string message = 3;
+  string author_name = 4;
+  string author_email = 5;
+  string user_id = 6;  // For permission checks
+}
+
+message PushResponse {
+  bool success = 1;
+  optional string commit_hash = 2;
+  optional string error = 3;
+}

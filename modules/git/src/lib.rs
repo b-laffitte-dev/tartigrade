@@ -15,6 +15,13 @@ pub mod service;
 pub mod handler;
 pub mod routes;
 
+// Conditionally include gRPC module
+#[cfg(feature = "grpc")]
+pub mod grpc;
+
+#[cfg(feature = "grpc")]
+pub use grpc::*;
+
 // Re-export main types for easier access
 pub use config::*;
 pub use error::*;

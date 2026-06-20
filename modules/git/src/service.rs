@@ -12,7 +12,7 @@ use sqlx::postgres::PgPool;
 use uuid::Uuid;
 
 /// Git service for managing repositories
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct GitService {
     pool: PgPool,
 }
