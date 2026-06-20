@@ -12,6 +12,7 @@ pub mod models;
 pub mod repository;
 pub mod service;
 
+pub mod gateway;
 pub mod handler;
 pub mod routes;
 
