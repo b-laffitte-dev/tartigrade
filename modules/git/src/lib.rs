@@ -23,6 +23,13 @@ pub mod grpc;
 #[cfg(feature = "grpc")]
 pub use grpc::*;
 
+// Conditionally include GraphQL module
+#[cfg(feature = "graphql")]
+pub mod graphql;
+
+#[cfg(feature = "graphql")]
+pub use graphql::*;
+
 // Re-export main types for easier access
 pub use config::*;
 pub use error::*;

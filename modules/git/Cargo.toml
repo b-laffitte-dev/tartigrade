@@ -19,7 +19,7 @@ path = "src/main.rs"
 
 [dependencies]
 # Web framework
-axum = { version = "0.7", features = ["json", "multipart", "ws"] }
+axum = { version = "0.8", features = ["json", "multipart", "ws"] }
 tokio = { version = "1.0", features = ["full"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
@@ -61,6 +61,10 @@ prost = { version = "0.12", optional = true }
 prost-types = { version = "0.12", optional = true }
 tokio-stream = { version = "0.1", optional = true }
 
+# GraphQL (optional)
+async-graphql = { version = "8.0.0-rc.5", optional = true }
+async-graphql-axum = { version = "8.0.0-rc.5", optional = true }
+
 [build-dependencies]
 # gRPC code generation
 tonic-build = { version = "0.10", optional = true }
@@ -91,11 +95,17 @@ strip = true
 default = []
 integration-test = []
 grpc = ["tonic", "prost", "prost-types", "tokio-stream"]
+graphql = ["async-graphql", "async-graphql-axum"]
 
 [[bin]]
 name = "tardigrade-git-grpc"
 path = "src/bin/grpc_server.rs"
 required-features = ["grpc"]
+
+[[bin]]
+name = "tardigrade-git-graphql"
+path = "src/bin/graphql_server.rs"
+required-features = ["graphql"]
 
 [package.metadata.sqlx]
 database-url = "postgres://user:password@localhost:5432/tardigrade"
