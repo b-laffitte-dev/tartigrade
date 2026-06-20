@@ -22,6 +22,26 @@ pub enum GitError {
     #[error("Repository '{0}' already exists")]
     RepositoryAlreadyExists(String),
 
+    /// Branch not found
+    #[error("Branch not found")]
+    BranchNotFound,
+
+    /// Branch with given name already exists
+    #[error("Branch '{0}' already exists")]
+    BranchAlreadyExists(String),
+
+    /// Cannot delete default branch
+    #[error("Cannot delete default branch")]
+    CannotDeleteDefaultBranch,
+
+    /// Commit not found
+    #[error("Commit not found")]
+    CommitNotFound,
+
+    /// Commit with given hash already exists
+    #[error("Commit with hash '{0}' already exists")]
+    CommitAlreadyExists(String),
+
     /// Permission denied for the operation
     #[error("Permission denied")]
     PermissionDenied,
@@ -45,6 +65,14 @@ pub enum GitError {
     /// Configuration error
     #[error("Configuration error: {0}")]
     ConfigError(String),
+
+    /// Clone error
+    #[error("Clone error: {0}")]
+    CloneError(String),
+
+    /// Push error
+    #[error("Push error: {0}")]
+    PushError(String),
 }
 
 /// Error response for API
@@ -62,6 +90,11 @@ impl GitError {
         match self {
             GitError::RepositoryNotFound => StatusCode::NOT_FOUND,
             GitError::RepositoryAlreadyExists(_) => StatusCode::CONFLICT,
+            GitError::BranchNotFound => StatusCode::NOT_FOUND,
+            GitError::BranchAlreadyExists(_) => StatusCode::CONFLICT,
+            GitError::CannotDeleteDefaultBranch => StatusCode::BAD_REQUEST,
+            GitError::CommitNotFound => StatusCode::NOT_FOUND,
+            GitError::CommitAlreadyExists(_) => StatusCode::CONFLICT,
             GitError::PermissionDenied => StatusCode::FORBIDDEN,
             GitError::ValidationError(_) => StatusCode::BAD_REQUEST,
             GitError::InvalidInput(_) => StatusCode::BAD_REQUEST,
@@ -69,6 +102,8 @@ impl GitError {
             GitError::Database(_) => StatusCode::INTERNAL_SERVER_ERROR,
             GitError::InternalError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             GitError::ConfigError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            GitError::CloneError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            GitError::PushError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -84,6 +119,31 @@ impl GitError {
                 "conflict".to_string(),
                 "Repository already exists".to_string(),
                 Some(format!("Repository with name '{}' already exists", name)),
+            ),
+            GitError::BranchNotFound => (
+                "not_found".to_string(),
+                "Branch not found".to_string(),
+                None,
+            ),
+            GitError::BranchAlreadyExists(name) => (
+                "conflict".to_string(),
+                "Branch already exists".to_string(),
+                Some(format!("Branch with name '{}' already exists", name)),
+            ),
+            GitError::CannotDeleteDefaultBranch => (
+                "bad_request".to_string(),
+                "Cannot delete default branch".to_string(),
+                None,
+            ),
+            GitError::CommitNotFound => (
+                "not_found".to_string(),
+                "Commit not found".to_string(),
+                None,
+            ),
+            GitError::CommitAlreadyExists(hash) => (
+                "conflict".to_string(),
+                "Commit already exists".to_string(),
+                Some(format!("Commit with hash '{}' already exists", hash)),
             ),
             GitError::PermissionDenied => (
                 "forbidden".to_string(),
@@ -118,6 +178,16 @@ impl GitError {
             GitError::ConfigError(msg) => (
                 "config_error".to_string(),
                 "Configuration error".to_string(),
+                Some(msg.clone()),
+            ),
+            GitError::CloneError(msg) => (
+                "clone_error".to_string(),
+                "Clone error".to_string(),
+                Some(msg.clone()),
+            ),
+            GitError::PushError(msg) => (
+                "push_error".to_string(),
+                "Push error".to_string(),
                 Some(msg.clone()),
             ),
         };

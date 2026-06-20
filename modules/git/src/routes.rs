@@ -90,12 +90,42 @@ pub fn create_health_router() -> Router<Arc<AppState>> {
         .route("/api/info", get(get_api_info_handler))
 }
 
+/// Create branches router for a specific repository
+pub fn create_branches_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/", post(create_branch).get(list_branches))
+        .route("/:branch_name", get(get_branch).delete(delete_branch))
+}
+
+/// Create commits router for a specific branch
+pub fn create_commits_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/", post(create_commit).get(list_commits))
+}
+
+/// Create clone and push router for a repository
+pub fn create_clone_push_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/clone", post(clone_repository))
+        .route("/push", post(push_to_repository))
+}
+
 /// Combine all routers
 pub fn create_all_routers(pool: sqlx::postgres::PgPool) -> Router {
     let state = Arc::new(AppState::new(pool));
 
     Router::new()
         .nest("/repositories", create_repositories_router())
+        .nest(
+            "/repositories/:repository_id/branches",
+            create_branches_router(),
+        )
+        .nest(
+            "/repositories/:repository_id/branches/:branch_name/commits",
+            create_commits_router(),
+        )
+        .nest("/repositories/:repository_id", create_clone_push_router())
+        .nest("/commits", Router::new().route("/:commit_id", get(get_commit)))
         .nest("/health", create_health_router())
         .with_state(state)
         .layer(
