@@ -22,6 +22,26 @@ pub enum GitError {
     #[error("Repository '{0}' already exists")]
     RepositoryAlreadyExists(String),
 
+    /// Branch not found
+    #[error("Branch not found")]
+    BranchNotFound,
+
+    /// Branch with given name already exists
+    #[error("Branch '{0}' already exists")]
+    BranchAlreadyExists(String),
+
+    /// Cannot delete default branch
+    #[error("Cannot delete default branch")]
+    CannotDeleteDefaultBranch,
+
+    /// Commit not found
+    #[error("Commit not found")]
+    CommitNotFound,
+
+    /// Parent commit not found
+    #[error("Parent commit '{0}' not found")]
+    ParentCommitNotFound(String),
+
     /// Permission denied for the operation
     #[error("Permission denied")]
     PermissionDenied,
@@ -62,6 +82,11 @@ impl GitError {
         match self {
             GitError::RepositoryNotFound => StatusCode::NOT_FOUND,
             GitError::RepositoryAlreadyExists(_) => StatusCode::CONFLICT,
+            GitError::BranchNotFound => StatusCode::NOT_FOUND,
+            GitError::BranchAlreadyExists(_) => StatusCode::CONFLICT,
+            GitError::CannotDeleteDefaultBranch => StatusCode::BAD_REQUEST,
+            GitError::CommitNotFound => StatusCode::NOT_FOUND,
+            GitError::ParentCommitNotFound(_) => StatusCode::NOT_FOUND,
             GitError::PermissionDenied => StatusCode::FORBIDDEN,
             GitError::ValidationError(_) => StatusCode::BAD_REQUEST,
             GitError::InvalidInput(_) => StatusCode::BAD_REQUEST,
@@ -84,6 +109,31 @@ impl GitError {
                 "conflict".to_string(),
                 "Repository already exists".to_string(),
                 Some(format!("Repository with name '{}' already exists", name)),
+            ),
+            GitError::BranchNotFound => (
+                "not_found".to_string(),
+                "Branch not found".to_string(),
+                None,
+            ),
+            GitError::BranchAlreadyExists(name) => (
+                "conflict".to_string(),
+                "Branch already exists".to_string(),
+                Some(format!("Branch with name '{}' already exists", name)),
+            ),
+            GitError::CannotDeleteDefaultBranch => (
+                "bad_request".to_string(),
+                "Cannot delete default branch".to_string(),
+                Some("The default branch cannot be deleted. Please set another branch as default first.".to_string()),
+            ),
+            GitError::CommitNotFound => (
+                "not_found".to_string(),
+                "Commit not found".to_string(),
+                None,
+            ),
+            GitError::ParentCommitNotFound(hash) => (
+                "not_found".to_string(),
+                "Parent commit not found".to_string(),
+                Some(format!("Parent commit with hash '{}' not found", hash)),
             ),
             GitError::PermissionDenied => (
                 "forbidden".to_string(),
