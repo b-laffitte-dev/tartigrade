@@ -1,7 +1,11 @@
-//! HTTP handlers for Tardigrade Git module
+//! HTTP handlers module for Tardigrade Git
 //!
-//! This module contains all the HTTP request handlers for the Git API.
+//! This module exports all HTTP handlers for the Git module.
 
+pub mod branch;
+pub mod commit;
 pub mod repository;
 
+pub use branch::*;
+pub use commit::*;
 pub use repository::*;
