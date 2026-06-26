@@ -1,0 +1,211 @@
+syntax = "proto3";
+
+package tardigrade.git.v1;
+
+option go_package = "./;git_v1";
+
+// Git Service provides gRPC endpoints for managing Git repositories, branches, and commits
+service GitService {
+  // Repository operations
+  rpc CreateRepository(CreateRepositoryRequest) returns (RepositoryResponse);
+  rpc GetRepository(GetRepositoryRequest) returns (RepositoryResponse);
+  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse);
+  rpc UpdateRepository(UpdateRepositoryRequest) returns (RepositoryResponse);
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteResponse);
+
+  // Branch operations
+  rpc CreateBranch(CreateBranchRequest) returns (BranchResponse);
+  rpc GetBranch(GetBranchRequest) returns (BranchResponse);
+  rpc ListBranches(ListBranchesRequest) returns (ListBranchesResponse);
+  rpc UpdateBranch(UpdateBranchRequest) returns (BranchResponse);
+  rpc DeleteBranch(DeleteBranchRequest) returns (DeleteResponse);
+  rpc GetDefaultBranch(GetDefaultBranchRequest) returns (BranchResponse);
+
+  // Commit operations
+  rpc CreateCommit(CreateCommitRequest) returns (CommitResponse);
+  rpc GetCommit(GetCommitRequest) returns (CommitResponse);
+  rpc ListCommits(ListCommitsRequest) returns (ListCommitsResponse);
+  rpc GetLatestCommit(GetLatestCommitRequest) returns (CommitResponse);
+  rpc ListCommitsByBranch(ListCommitsByBranchRequest) returns (ListCommitsResponse);
+
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Repository messages
+message CreateRepositoryRequest {
+  string name = 1;
+  optional string description = 2;
+  bool is_private = 3;
+  string default_branch = 4;
+  string owner_id = 5; // UUID as string
+}
+
+message GetRepositoryRequest {
+  string id = 1; // UUID as string
+}
+
+message ListRepositoriesRequest {
+  optional string owner_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  optional string search = 4;
+  optional bool is_private = 5;
+}
+
+message UpdateRepositoryRequest {
+  string id = 1; // UUID as string
+  optional string name = 2;
+  optional string description = 3;
+  optional bool is_private = 4;
+  optional string default_branch = 5;
+}
+
+message DeleteRepositoryRequest {
+  string id = 1; // UUID as string
+  string owner_id = 2; // UUID as string
+}
+
+message RepositoryResponse {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  bool is_private = 4;
+  string owner_id = 5;
+  string default_branch = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message ListRepositoriesResponse {
+  repeated RepositoryResponse repositories = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+  int32 total_pages = 5;
+}
+
+// Branch messages
+message CreateBranchRequest {
+  string repository_id = 1; // UUID as string
+  string name = 2;
+  string commit_hash = 3;
+  bool is_default = 4;
+}
+
+message GetBranchRequest {
+  string id = 1; // UUID as string
+}
+
+message ListBranchesRequest {
+  string repository_id = 1; // UUID as string
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message UpdateBranchRequest {
+  string id = 1; // UUID as string
+  optional string name = 2;
+  optional string commit_hash = 3;
+  optional bool is_default = 4;
+}
+
+message DeleteBranchRequest {
+  string id = 1; // UUID as string
+}
+
+message GetDefaultBranchRequest {
+  string repository_id = 1; // UUID as string
+}
+
+message BranchResponse {
+  string id = 1;
+  string repository_id = 2;
+  string name = 3;
+  string commit_hash = 4;
+  bool is_default = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+message ListBranchesResponse {
+  repeated BranchResponse branches = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+  int32 total_pages = 5;
+}
+
+// Commit messages
+message CreateCommitRequest {
+  string repository_id = 1; // UUID as string
+  string hash = 2;
+  optional string parent_hash = 3;
+  string message = 4;
+  string author_name = 5;
+  string author_email = 6;
+  optional string committer_name = 7;
+  optional string committer_email = 8;
+  string branch_name = 9;
+}
+
+message GetCommitRequest {
+  string id = 1; // UUID as string
+}
+
+message ListCommitsRequest {
+  string repository_id = 1; // UUID as string
+  optional string branch_name = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  optional string search = 5;
+}
+
+message GetLatestCommitRequest {
+  string repository_id = 1; // UUID as string
+  string branch_name = 2;
+}
+
+message ListCommitsByBranchRequest {
+  string repository_id = 1; // UUID as string
+  string branch_name = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message CommitResponse {
+  string id = 1;
+  string repository_id = 2;
+  string hash = 3;
+  optional string parent_hash = 4;
+  string message = 5;
+  string author_name = 6;
+  string author_email = 7;
+  optional string committer_name = 8;
+  optional string committer_email = 9;
+  string branch_name = 10;
+  string created_at = 11;
+}
+
+message ListCommitsResponse {
+  repeated CommitResponse commits = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+  int32 total_pages = 5;
+}
+
+// Common messages
+message DeleteResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string module = 2;
+  string version = 3;
+  string timestamp = 4;
+}
