@@ -12,6 +12,13 @@ use sqlx::postgres::PgPool;
 use sqlx::{FromRow, Row};
 use uuid::Uuid;
 
+// Re-export branch and commit repository modules
+pub mod branch;
+pub mod commit;
+
+pub use branch::*;
+pub use commit::*;
+
 /// Create a new repository
 pub async fn create_repository(
     pool: &PgPool,
