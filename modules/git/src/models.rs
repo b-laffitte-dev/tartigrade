@@ -7,6 +7,13 @@ use serde::{Deserialize, Serialize};
 use sqlx::Row;
 use uuid::Uuid;
 
+// Re-export branch and commit models
+pub mod branch;
+pub mod commit;
+
+pub use branch::*;
+pub use commit::*;
+
 /// Repository entity
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Repository {
