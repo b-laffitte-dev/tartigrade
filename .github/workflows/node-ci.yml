@@ -1,0 +1,216 @@
+name: Node.js CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'ui/**'
+      - 'package.json'
+      - 'package-lock.json'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'ui/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  test:
+    name: Test Node.js UI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ui-module:
+          - git
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ui/${{ matrix.ui-module }}/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./ui/${{ matrix.ui-module }}
+      run: npm ci
+
+    - name: Run lint
+      working-directory: ./ui/${{ matrix.ui-module }}
+      run: npm run lint
+
+    - name: Run type check
+      working-directory: ./ui/${{ matrix.ui-module }}
+      run: npx tsc --noEmit
+
+    - name: Run tests
+      working-directory: ./ui/${{ matrix.ui-module }}
+      run: npm test
+
+    - name: Run build
+      working-directory: ./ui/${{ matrix.ui-module }}
+      run: npm run build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: tardigrade-ui-${{ matrix.ui-module }}
+        path: ./ui/${{ matrix.ui-module }}/dist/
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      working-directory: ./ui/git
+      run: npm ci
+
+    - name: Run tests with coverage
+      working-directory: ./ui/git
+      run: npm run test:coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./ui/git/coverage/lcov.info
+        flags: node
+        fail_ci_if_error: false
+
+  package:
+    name: Create UI Package
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Create UI package structure
+      run: |
+        mkdir -p release/ui
+        cp -r ui/git/package.json release/ui/
+        cp -r ui/git/package-lock.json release/ui/
+        cp -r ui/git/src release/ui/
+        cp -r ui/git/public release/ui/
+        cp -r ui/git/index.html release/ui/
+        cp -r ui/git/vite.config.ts release/ui/
+        cp -r ui/git/tailwind.config.js release/ui/
+        cp -r ui/git/postcss.config.js release/ui/
+        cp -r ui/git/tsconfig.json release/ui/
+        cp -r ui/git/tsconfig.node.json release/ui/
+        
+        # Copy built artifacts
+        find artifacts -name "*.js" -o -name "*.css" -o -name "*.html" | xargs -I {} cp --parents {} release/ui/
+        
+        # Create tar.gz
+        tar -czvf tardigrade-ui.tar.gz -C release ui
+        
+        # Create checksum
+        sha256sum tardigrade-ui.tar.gz > tardigrade-ui.tar.gz.sha256
+
+    - name: Upload UI package
+      uses: actions/upload-artifact@v3
+      with:
+        name: tardigrade-ui
+        path: |
+          tardigrade-ui.tar.gz
+          tardigrade-ui.tar.gz.sha256
+
+  docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      working-directory: ./ui/git
+      run: npm ci
+
+    - name: Build UI
+      working-directory: ./ui/git
+      run: npm run build
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker Hub
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./ui/git
+        file: ./ui/git/Dockerfile
+        push: ${{ github.ref == 'refs/heads/main' }}
+        tags: |
+          tardigradeci/ui-git:latest
+          tardigradeci/ui-git:${{ github.sha }}
+        build-args: |
+          NODE_VERSION=${{ env.NODE_VERSION }}
+
+  release:
+    name: Create UI Release
+    runs-on: ubuntu-latest
+    needs: package
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Download UI package
+      uses: actions/download-artifact@v3
+      with:
+        name: tardigrade-ui
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ui-v0.1.0-${{ github.sha }}
+        name: Tardigrade UI v0.1.0
+        body: |
+          ## Changelog
+          
+          - Initial release of Tardigrade Git UI Module
+          - React 18 with TypeScript
+          - TailwindCSS for styling
+          - Vite for bundling
+          
+          ## Assets
+          
+          - `tardigrade-ui.tar.gz` - Complete UI source and built files
+          - `tardigrade-ui.tar.gz.sha256` - SHA256 checksum
+        files: |
+          tardigrade-ui.tar.gz
+          tardigrade-ui.tar.gz.sha256
+        draft: false
+        prerelease: true

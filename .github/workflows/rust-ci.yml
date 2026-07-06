@@ -1,0 +1,220 @@
+name: Rust CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'modules/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'modules/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  test:
+    name: Test Rust Modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - git
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        components: rustfmt, clippy
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install PostgreSQL
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql postgresql-contrib
+        sudo systemctl start postgresql
+        sudo -u postgres psql -c "CREATE USER tardigrade WITH PASSWORD 'tardigrade';"
+        sudo -u postgres psql -c "CREATE DATABASE tardigrade OWNER tardigrade;"
+        sudo -u postgres psql -c "ALTER USER tardigrade CREATEDB;"
+
+    - name: Run tests for ${{ matrix.module }} module
+      working-directory: ./modules/${{ matrix.module }}
+      run: |
+        cargo test --all-features -- --nocapture
+
+    - name: Run clippy
+      working-directory: ./modules/${{ matrix.module }}
+      run: cargo clippy --all-features -- -D warnings
+
+    - name: Check formatting
+      working-directory: ./modules/${{ matrix.module }}
+      run: cargo fmt --all -- --check
+
+  build:
+    name: Build Rust Modules
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        module:
+          - git
+        target:
+          - x86_64-unknown-linux-gnu
+          - x86_64-unknown-linux-musl
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        target: ${{ matrix.target }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.target }}
+
+    - name: Build release
+      working-directory: ./modules/${{ matrix.module }}
+      run: |
+        cargo build --release --target ${{ matrix.target }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: tardigrade-${{ matrix.module }}-${{ matrix.target }}
+        path: ./modules/${{ matrix.module }}/target/${{ matrix.target }}/release/tardigrade-${{ matrix.module }}
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    - name: Install tarpaulin
+      run: cargo install cargo-tarpaulin
+
+    - name: Run coverage
+      working-directory: ./modules/git
+      run: |
+        cargo tarpaulin --all-features --out Xml --output-dir ../../coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage/cobertura.xml
+        flags: rust
+        fail_ci_if_error: false
+
+  package:
+    name: Create Release Package
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Create tar.gz package
+      run: |
+        mkdir -p release/tardigrade
+        cp -r modules/git/README.md release/tardigrade/
+        cp -r modules/git/migrations release/tardigrade/
+        cp -r modules/git/src release/tardigrade/
+        cp -r modules/git/Cargo.toml release/tardigrade/
+        cp -r modules/git/Cargo.lock release/tardigrade/
+        
+        # Copy binaries
+        find artifacts -name "tardigrade-*" -type f -exec cp {} release/tardigrade/ \;
+        
+        # Create tar.gz
+        tar -czvf tardigrade-release.tar.gz -C release tardigrade
+        
+        # Create checksum
+        sha256sum tardigrade-release.tar.gz > tardigrade-release.tar.gz.sha256
+
+    - name: Upload release package
+      uses: actions/upload-artifact@v3
+      with:
+        name: tardigrade-release
+        path: |
+          tardigrade-release.tar.gz
+          tardigrade-release.tar.gz.sha256
+
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: package
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Download release package
+      uses: actions/download-artifact@v3
+      with:
+        name: tardigrade-release
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v0.1.0-${{ github.sha }}
+        name: Tardigrade CI v0.1.0
+        body: |
+          ## Changelog
+          
+          - Initial release of Tardigrade Git Module
+          - Rust backend with Axum
+          - PostgreSQL database support
+          - Basic CI/CD pipeline
+          
+          ## Assets
+          
+          - `tardigrade-release.tar.gz` - Complete source and binaries
+          - `tardigrade-release.tar.gz.sha256` - SHA256 checksum
+        files: |
+          tardigrade-release.tar.gz
+          tardigrade-release.tar.gz.sha256
+        draft: false
+        prerelease: true

@@ -1,0 +1,323 @@
+name: Combined Release Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_run:
+    workflows: ["Rust CI/CD", "Node.js CI/CD"]
+    types:
+      - completed
+
+jobs:
+  check-workflows:
+    name: Check Workflow Completion
+    runs-on: ubuntu-latest
+    outputs:
+      rust_success: ${{ steps.check-rust.outputs.success }}
+      node_success: ${{ steps.check-node.outputs.success }}
+    
+    steps:
+    - name: Check Rust CI status
+      id: check-rust
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_run" ]; then
+          if [ "${{ github.event.workflow_run.workflow_id }}" = "Rust CI/CD" ]; then
+            echo "success=${{ github.event.workflow_run.conclusion == 'success' }}" >> $GITHUB_OUTPUT
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "success=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check Node CI status
+      id: check-node
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_run" ]; then
+          if [ "${{ github.event.workflow_run.workflow_id }}" = "Node.js CI/CD" ]; then
+            echo "success=${{ github.event.workflow_run.conclusion == 'success' }}" >> $GITHUB_OUTPUT
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "success=false" >> $GITHUB_OUTPUT
+        fi
+
+  create-combined-release:
+    name: Create Combined Release
+    runs-on: ubuntu-latest
+    needs: check-workflows
+    if: needs.check-workflows.outputs.rust_success == 'true' && needs.check-workflows.outputs.node_success == 'true'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Create final release structure
+      run: |
+        mkdir -p final-release/tardigrade
+        
+        # Copy Rust module
+        mkdir -p final-release/tardigrade/modules/git
+        cp -r modules/git/README.md final-release/tardigrade/modules/git/
+        cp -r modules/git/migrations final-release/tardigrade/modules/git/
+        cp -r modules/git/src final-release/tardigrade/modules/git/
+        cp -r modules/git/Cargo.toml final-release/tardigrade/modules/git/
+        cp -r modules/git/Cargo.lock final-release/tardigrade/modules/git/
+        
+        # Copy Node UI
+        mkdir -p final-release/tardigrade/ui/git
+        cp -r ui/git/package.json final-release/tardigrade/ui/git/
+        cp -r ui/git/package-lock.json final-release/tardigrade/ui/git/
+        cp -r ui/git/src final-release/tardigrade/ui/git/
+        cp -r ui/git/public final-release/tardigrade/ui/git/
+        cp -r ui/git/index.html final-release/tardigrade/ui/git/
+        cp -r ui/git/vite.config.ts final-release/tardigrade/ui/git/
+        cp -r ui/git/tailwind.config.js final-release/tardigrade/ui/git/
+        cp -r ui/git/postcss.config.js final-release/tardigrade/ui/git/
+        cp -r ui/git/tsconfig.json final-release/tardigrade/ui/git/
+        cp -r ui/git/tsconfig.node.json final-release/tardigrade/ui/git/
+        
+        # Copy binaries from artifacts
+        find artifacts -name "tardigrade-*" -type f -exec cp {} final-release/tardigrade/modules/git/ \;
+        
+        # Copy built UI from artifacts
+        find artifacts -path "*/tardigrade-ui-git/*" -type f -exec cp --parents {} final-release/tardigrade/ \;
+        
+        # Create Docker Compose file
+        cat > final-release/tardigrade/docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  git-backend:
+    build:
+      context: ./modules/git
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://tardigrade:tardigrade@db:5432/tardigrade
+      - RUST_LOG=info
+    depends_on:
+      - db
+
+  git-ui:
+    build:
+      context: ./ui/git
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://git-backend:3000
+    depends_on:
+      - git-backend
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=tardigrade
+      - POSTGRES_PASSWORD=tardigrade
+      - POSTGRES_DB=tardigrade
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
+EOF
+
+        # Create README for release
+        cat > final-release/tardigrade/README.md << 'EOF'
+# Tardigrade CI - Complete Release
+
+This is the complete release package for Tardigrade CI, containing both the Rust backend and Node.js frontend.
+
+## Structure
+
+```
+tardigrade/
+├── modules/
+│   └── git/                 # Rust Git module backend
+│       ├── Cargo.toml
+│       ├── Cargo.lock
+│       ├── src/
+│       ├── migrations/
+│       └── tardigrade-git   # Compiled binary
+└── ui/
+    └── git/                 # React UI module
+        ├── package.json
+        ├── src/
+        ├── public/
+        └── dist/            # Built UI files
+```
+
+## Quick Start
+
+### Using Docker Compose
+
+1. Navigate to the release directory:
+   ```bash
+   cd tardigrade
+   ```
+
+2. Start all services:
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Access the services:
+   - Git Backend API: http://localhost:3000
+   - Git UI: http://localhost:5173
+   - PostgreSQL: localhost:5432
+
+### Manual Setup
+
+#### Backend (Rust)
+
+1. Navigate to the Git module:
+   ```bash
+   cd modules/git
+   ```
+
+2. Build and run:
+   ```bash
+   cargo build --release
+   ./target/release/tardigrade-git
+   ```
+
+3. Set up PostgreSQL and run migrations:
+   ```bash
+   createdb tardigrade
+   sqlx migrate run
+   ```
+
+#### Frontend (Node.js)
+
+1. Navigate to the UI module:
+   ```bash
+   cd ui/git
+   ```
+
+2. Install dependencies and run:
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+## Configuration
+
+### Backend Environment Variables
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `RUST_LOG`: Logging level (debug, info, warn, error)
+- `PORT`: Server port (default: 3000)
+
+### Frontend Environment Variables
+
+- `VITE_API_URL`: Backend API URL (default: http://localhost:3000)
+
+## Building from Source
+
+### Rust Backend
+
+```bash
+cd modules/git
+cargo build --release
+```
+
+### Node.js Frontend
+
+```bash
+cd ui/git
+npm install
+npm run build
+```
+
+## License
+
+AGPL-3.0
+EOF
+
+        # Create tar.gz of the complete release
+        tar -czvf tardigrade-complete-release.tar.gz -C final-release tardigrade
+        
+        # Create checksum
+        sha256sum tardigrade-complete-release.tar.gz > tardigrade-complete-release.tar.gz.sha256
+
+    - name: Upload combined release
+      uses: actions/upload-artifact@v3
+      with:
+        name: tardigrade-complete-release
+        path: |
+          tardigrade-complete-release.tar.gz
+          tardigrade-complete-release.tar.gz.sha256
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v0.1.0-${{ github.sha }}
+        name: Tardigrade CI v0.1.0 - Complete Release
+        body: |
+          ## Complete Tardigrade CI Release
+          
+          This release includes:
+          
+          ### Backend (Rust)
+          - Git module with Axum web framework
+          - PostgreSQL database support
+          - REST API for repository management
+          - Complete CI/CD pipeline
+          
+          ### Frontend (Node.js)
+          - React 18 with TypeScript
+          - TailwindCSS for styling
+          - Vite for bundling
+          - Responsive UI components
+          
+          ### Features
+          - Repository creation and management
+          - Branch management
+          - Pull request support
+          - Basic CI pipeline execution
+          - Artifact storage
+          
+          ## Quick Start
+          
+          ```bash
+          # Using Docker Compose
+          tar -xzvf tardigrade-complete-release.tar.gz
+          cd tardigrade
+          docker-compose up -d
+          ```
+          
+          Access:
+          - UI: http://localhost:5173
+          - API: http://localhost:3000
+          
+          ## Assets
+          
+          - `tardigrade-complete-release.tar.gz` - Complete source, binaries, and built UI
+          - `tardigrade-complete-release.tar.gz.sha256` - SHA256 checksum for verification
+        files: |
+          tardigrade-complete-release.tar.gz
+          tardigrade-complete-release.tar.gz.sha256
+        draft: false
+        prerelease: true
+
+  notify:
+    name: Notify on Success
+    runs-on: ubuntu-latest
+    needs: create-combined-release
+    if: success()
+
+    steps:
+    - name: Send success notification
+      run: |
+        echo "✅ Tardigrade CI Complete Release v0.1.0-${{ github.sha }} has been successfully created!"
+        echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/v0.1.0-${{ github.sha }}"
