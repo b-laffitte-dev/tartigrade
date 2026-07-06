@@ -18,13 +18,15 @@ name = "tardigrade-git"
 path = "src/main.rs"
 
 [dependencies]
-# Web framework
-axum = { version = "0.7", features = ["json", "multipart", "ws"] }
-tokio = { version = "1.0", features = ["full"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+# Web framework - using rustls for TLS, disable default features to avoid native-tls
+axum = { version = "0.7", features = ["json", "multipart", "ws", "query"], default-features = false }
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros", "signal", "fs", "io-util", "net", "time"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "fs"], default-features = false }
 
 # Database - using rustls without native-tls
+# Note: sqlx with postgres feature requires native-tls by default, so we need to be careful
+# We'll use the postgres feature but with rustls runtime
 sqlx = { version = "0.8", features = ["postgres", "uuid", "chrono", "runtime-tokio-rustls", "json", "migrate"], default-features = false }
 
 # Serialization
@@ -52,22 +54,16 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 config = "0.13"
 dotenv = "0.15"
 
-# HTTP client
-reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+# HTTP client - using rustls
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
 
 [dev-dependencies]
 # Testing
 mockall = "0.11"
-# Disable testcontainers for now to avoid OpenSSL dependency
-# testcontainers = "0.15"
-# testcontainers-modules = { version = "0.1", features = ["postgres"] }
 serial_test = "2.0"
 
-# SQLx test utilities
+# SQLx test utilities - using rustls
 sqlx = { version = "0.8", features = ["postgres", "uuid", "chrono", "runtime-tokio-rustls", "json", "migrate"], default-features = false }
-
-# Tarpaulin for coverage
-# Note: tarpaulin is installed separately via cargo-install
 
 [profile.dev]
 opt-level = 1
