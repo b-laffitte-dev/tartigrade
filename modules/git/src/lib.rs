@@ -15,12 +15,24 @@ pub mod service;
 pub mod handler;
 pub mod routes;
 
+// gRPC module (available when grpc feature is enabled)
+#[cfg(feature = "grpc")]
+pub mod grpc;
+
+// GraphQL module (available when graphql feature is enabled)
+#[cfg(feature = "graphql")]
+pub mod graphql;
+
+// API Gateway module
+pub mod gateway;
+
 // Re-export main types for easier access
 pub use config::*;
 pub use error::*;
 pub use models::*;
 pub use repository::*;
 pub use service::*;
+pub use gateway::*;
 
 use std::sync::Arc;
 

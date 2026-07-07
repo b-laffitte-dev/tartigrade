@@ -55,6 +55,16 @@ dotenv = "0.15"
 # HTTP client
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 
+# gRPC
+tonic = "0.11"
+prost = "0.12"
+prost-types = "0.12"
+tokio-stream = { version = "0.1", features = ["net"] }
+
+# GraphQL
+async-graphql = "6.0"
+async-graphql-axum = "6.0"
+
 [dev-dependencies]
 # Testing
 mockall = "0.11"
@@ -69,6 +79,9 @@ sqlx = { version = "0.8", features = ["postgres", "uuid", "chrono", "runtime-tok
 # Tarpaulin for coverage
 # Note: tarpaulin is installed separately via cargo-install
 
+[build-dependencies]
+tonic-build = "0.11"
+
 [profile.dev]
 opt-level = 1
 
@@ -81,6 +94,8 @@ strip = true
 [features]
 default = []
 integration-test = []
+grpc = ["tonic", "prost", "tokio-stream"]
+graphql = ["async-graphql", "async-graphql-axum"]
 
 [package.metadata.sqlx]
 database-url = "postgres://user:password@localhost:5432/tardigrade"
