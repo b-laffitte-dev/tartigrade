@@ -1,0 +1,142 @@
+version: '3.8'
+
+# =============================================================================
+# Tardigrade-CI - Docker Compose Configuration
+# =============================================================================
+# 
+# Ce fichier configure l'environnement de développement local.
+# Pour démarrer : docker-compose up -d
+#
+# Services:
+#   - PostgreSQL : Base de données principale
+#   - Redis : Cache (optionnel pour le MVP)
+#   - Git Module : Backend Rust (module Git)
+#   - UI : Frontend React (module Git UI)
+#
+# =============================================================================
+
+services:
+  # -----------------------------------------------------------------------------
+  # PostgreSQL - Base de données
+  # -----------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: tardigrade-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tardigrade_git
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tardigrade-network
+    restart: unless-stopped
+
+  # -----------------------------------------------------------------------------
+  # Redis - Cache (optionnel pour le MVP)
+  # -----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: tardigrade-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tardigrade-network
+    restart: unless-stopped
+    profiles:
+      - cache
+
+  # -----------------------------------------------------------------------------
+  # Git Module - Backend Rust
+  # -----------------------------------------------------------------------------
+  git-module:
+    build:
+      context: ..
+      dockerfile: modules/git/Dockerfile
+    container_name: tardigrade-git
+    environment:
+      # Configuration de la base de données
+      TARDIGRADE_GIT__DATABASE_URL: postgres://postgres:postgres@postgres:5432/tardigrade_git
+      TARDIGRADE_GIT__DATABASE_TIMEOUT: 30
+      
+      # Configuration du serveur
+      TARDIGRADE_GIT__ENVIRONMENT: dev
+      TARDIGRADE_GIT__PORT: 3001
+      TARDIGRADE_GIT__LOG_LEVEL: debug
+      TARDIGRADE_GIT__DEBUG: "true"
+      
+      # Rust
+      RUST_LOG: debug
+      RUST_BACKTRACE: 1
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tardigrade-network
+    restart: unless-stopped
+    # Pour le développement, on veut voir les logs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # -----------------------------------------------------------------------------
+  # UI - Frontend React
+  # -----------------------------------------------------------------------------
+  ui:
+    build:
+      context: ..
+      dockerfile: ui/git/Dockerfile
+      args:
+        # Configuration pour le build
+        VITE_API_BASE_URL: http://localhost:3001/api
+        VITE_GIT_MODULE_URL: http://localhost:3001/api
+    container_name: tardigrade-ui
+    environment:
+      # Configuration pour le runtime (si nécessaire)
+      NODE_ENV: production
+    ports:
+      - "8080:80"
+    depends_on:
+      git-module:
+        condition: service_started
+    networks:
+      - tardigrade-network
+    restart: unless-stopped
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+    name: tardigrade_postgres_data
+  redis_data:
+    driver: local
+    name: tardigrade_redis_data
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  tardigrade-network:
+    driver: bridge
+    name: tardigrade-network

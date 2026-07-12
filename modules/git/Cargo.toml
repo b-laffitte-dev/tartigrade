@@ -1,0 +1,60 @@
+[package]
+name = "tardigrade-git"
+version = "0.1.0"
+edition = "2021"
+authors = ["Benzo <benzo@tardigrade-ci.dev>"]
+description = "Git Module for Tardigrade-CI - Repository management"
+license = "AGPL-3.0"
+readme = "README.md"
+homepage = "https://tardigrade-ci.dev"
+repository = "https://github.com/tardigrade-ci/tardigrade"
+keywords = ["git", "devops", "ci", "repository", "axum"]
+categories = ["development-tools", "web-programming"]
+
+[[bin]]
+name = "tardigrade-git"
+path = "src/main.rs"
+
+[lib]
+name = "tardigrade_git"
+path = "src/lib.rs"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+sqlx = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+config = { workspace = true }
+
+validator = { workspace = true }
+
+# Local common crate
+tardigrade_common = { path = "../../crates/common" }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+serial_test = { workspace = true }
+
+[features]
+default = []
+test-utils = []
+
+[package.metadata.sqlx]
+# Ne pas commiter ce fichier ! Il sera généré par sqlx prepare
+# offline = true

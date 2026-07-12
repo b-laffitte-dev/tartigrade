@@ -1,0 +1,37 @@
+[package]
+name = "tardigrade_common"
+version = "0.1.0"
+edition = "2021"
+authors = ["Benzo <benzo@tardigrade-ci.dev>"]
+description = "Common utilities and types for Tardigrade-CI modules"
+license = "AGPL-3.0"
+readme = "README.md"
+
+[lib]
+name = "tardigrade_common"
+path = "src/lib.rs"
+
+[dependencies]
+# Workspace dependencies
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+uuid = { workspace = true }
+chrono = { workspace = true }
+
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+strum = { workspace = true }
+strum_macros = { workspace = true }
+
+# Configuration
+config = { workspace = true }
+
+# Database
+sqlx = { workspace = true }
+
+[dev-dependencies]
+
+[features]
+default = []
