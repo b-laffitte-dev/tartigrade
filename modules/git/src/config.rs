@@ -41,7 +41,7 @@ impl GitConfig {
         // Ajouter les variables d'environnement avec préfixe
         builder = builder.add_source(
             config::Environment::with_prefix("TARDIGRADE_GIT")
-                .prefix_separator("_")
+                .prefix_separator("__")
                 .separator("__"),
         );
 

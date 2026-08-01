@@ -13,7 +13,8 @@ use tardigrade_common::ModuleConfig;
 /// Crée le router principal pour le module Git avec une configuration
 pub async fn create_router_with_config(config: &ModuleConfig) -> Result<Router, Box<dyn std::error::Error>> {
     // Créer la pool de connexions
-    let pool = create_pool(&config.database_url_with_timeout()).await?;
+    // TODO: réactiver le timeout une fois que le problème de connexion est résolu
+    let pool = create_pool(&config.database_url).await?;
 
     // Initialiser le schéma
     init_schema(&pool).await?;

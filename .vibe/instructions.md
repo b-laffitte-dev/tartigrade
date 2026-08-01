@@ -1,5 +1,8 @@
 # Instructions pour Mistral Vibe - Projet Tardigrade-CI
 
+## Vision Produit
+> "Tardigrade-CI vise à libérer les équipes DevOps des silos technologiques en offrant une plateforme **100% modulaire**, où chaque composant (git, CI, stockage) peut être activé, désactivé ou remplacé sans verrouillage. Inspiré par la résilience du tardigrade, notre plateforme est conçue pour survivre à tous les environnements : cloud, on-premise, ou hybride. Notre ambition est de devenir le standard open-source pour les workflows DevOps personnalisables."
+
 ## Contexte
 Ce projet est une **plateforme DevOps modulaire open-source** conçue pour apprendre Rust tout en construisant un produit réel.
 

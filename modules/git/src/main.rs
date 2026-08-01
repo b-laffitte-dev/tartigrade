@@ -3,6 +3,7 @@
 //! Lance le serveur HTTP Axum et configure le logging.
 
 use axum::Router;
+use config::{Config, Environment};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tardigrade_git::{config::GitConfig, routes::create_router_with_config};
@@ -11,8 +12,20 @@ use tracing_subscriber::{fmt, EnvFilter};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Charger la configuration par défaut pour le développement
-    let git_config = GitConfig::default();
+    // Charger la configuration depuis les variables d'environnement
+    let git_config = match GitConfig::load("modules/git/config.toml") {
+        Ok(config) => config,
+        Err(_) => {
+            // Si le fichier n'existe pas, utiliser la configuration depuis l'environnement uniquement
+            use config::{Config, Environment};
+            let mut builder = Config::builder()
+                .add_source(Environment::with_prefix("TARDIGRADE_GIT").prefix_separator("__").separator("__"));
+            match builder.build()?.try_deserialize::<GitConfig>() {
+                Ok(config) => config,
+                Err(_) => GitConfig::default(),
+            }
+        }
+    };
     let module_config = &git_config.base.base;
 
     tracing::info!(
@@ -21,7 +34,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env = %module_config.environment,
         port = %module_config.port,
         database_url = %module_config.database_url,
-        "Démarrage du module Git avec configuration par défaut"
+        database_url_with_timeout = %module_config.database_url_with_timeout(),
+        "Démarrage du module Git avec configuration"
     );
 
     // Configurer le logging

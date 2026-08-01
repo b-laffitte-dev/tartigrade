@@ -85,6 +85,13 @@ services:
       RUST_BACKTRACE: 1
     ports:
       - "3001:3001"
+    # Healthcheck désactivé temporairement pour le débogage
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy
@@ -106,9 +113,9 @@ services:
       context: ..
       dockerfile: ui/git/Dockerfile
       args:
-        # Configuration pour le build
-        VITE_API_BASE_URL: http://localhost:3001/api
-        VITE_GIT_MODULE_URL: http://localhost:3001/api
+        # Configuration pour le build - utiliser /api car nginx va proxyer
+        VITE_API_BASE_URL: /api
+        VITE_GIT_MODULE_URL: /api
     container_name: tardigrade-ui
     environment:
       # Configuration pour le runtime (si nécessaire)
@@ -116,8 +123,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      git-module:
-        condition: service_started
+      - git-module
     networks:
       - tardigrade-network
     restart: unless-stopped

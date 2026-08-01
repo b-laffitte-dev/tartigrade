@@ -8,6 +8,8 @@ pub type DbPool = PgPool;
 
 /// Crée une nouvelle pool de connexions à PostgreSQL
 pub async fn create_pool(database_url: &str) -> Result<DbPool, sqlx::Error> {
+    // Note: Le paramètre connect_timeout dans l'URL est géré nativement par PostgreSQL
+    // sqlx passera ces paramètres à la connexion PostgreSQL sous-jacente
     let pool = PgPoolOptions::new()
         .max_connections(10)
         .acquire_timeout(Duration::from_secs(30))
