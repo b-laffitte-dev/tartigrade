@@ -61,9 +61,11 @@ pub async fn init_schema(pool: &DbPool) -> Result<(), sqlx::Error> {
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_repositories_owner_id ON repositories(owner_id)")
         .execute(pool)
         .await?;
-    sqlx::query("CREATE INDEX IF NOT EXISTS idx_repositories_created_at ON repositories(created_at)")
-        .execute(pool)
-        .await?;
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_repositories_created_at ON repositories(created_at)",
+    )
+    .execute(pool)
+    .await?;
 
     // Créer la table branches
     sqlx::query(
@@ -78,9 +80,11 @@ pub async fn init_schema(pool: &DbPool) -> Result<(), sqlx::Error> {
     .execute(pool)
     .await?;
 
-    sqlx::query("CREATE UNIQUE INDEX IF NOT EXISTS idx_branches_repo_name ON branches(repository_id, name)")
-        .execute(pool)
-        .await?;
+    sqlx::query(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_branches_repo_name ON branches(repository_id, name)",
+    )
+    .execute(pool)
+    .await?;
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_branches_repository_id ON branches(repository_id)")
         .execute(pool)
         .await?;
@@ -112,13 +116,13 @@ pub async fn init_schema(pool: &DbPool) -> Result<(), sqlx::Error> {
 /// Supprime toutes les données (UTILITAIRE DE DEV SEULEMENT)
 pub async fn clear_database(pool: &DbPool) -> Result<(), sqlx::Error> {
     let tables = vec!["commits", "branches", "repositories"];
-    
+
     for table in tables {
         sqlx::query(&format!("TRUNCATE TABLE {} CASCADE", table))
             .execute(pool)
             .await?;
     }
-    
+
     Ok(())
 }
 
@@ -132,7 +136,7 @@ mod tests {
     async fn test_create_pool() {
         let database_url = env::var("TEST_DATABASE_URL")
             .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/test".to_string());
-        
+
         let pool = create_pool(&database_url).await;
         assert!(pool.is_ok());
     }
@@ -142,7 +146,7 @@ mod tests {
     async fn test_check_connection() {
         let database_url = env::var("TEST_DATABASE_URL")
             .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/test".to_string());
-        
+
         let pool = create_pool(&database_url).await.unwrap();
         let result = check_connection(&pool).await;
         assert!(result.is_ok());
@@ -153,7 +157,7 @@ mod tests {
     async fn test_init_schema() {
         let database_url = env::var("TEST_DATABASE_URL")
             .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/test".to_string());
-        
+
         let pool = create_pool(&database_url).await.unwrap();
         let result = init_schema(&pool).await;
         assert!(result.is_ok());

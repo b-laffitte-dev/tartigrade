@@ -1,6 +1,10 @@
 //! Module de service pour la logique métier
 
-use crate::{error::{GitError, GitResult}, models::*, DbPool};
+use crate::{
+    error::{GitError, GitResult},
+    models::*,
+    DbPool,
+};
 use chrono::{DateTime, Utc};
 use sqlx::FromRow;
 use tardigrade_common::models::PaginatedResponse;
@@ -88,11 +92,9 @@ impl RepositoryService {
         let limit = pagination.limit();
 
         // Compter le total
-        let total: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM repositories",
-        )
-        .fetch_one(&self.pool)
-        .await?;
+        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM repositories")
+            .fetch_one(&self.pool)
+            .await?;
 
         // Récupérer les données
         let repos = sqlx::query_as::<_, RepositoryRow>(
@@ -170,12 +172,11 @@ impl RepositoryService {
 
     /// Supprime un repository
     pub async fn delete_repository(&self, id: Uuid) -> GitResult<()> {
-        let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM repositories WHERE id = $1)",
-        )
-        .bind(id)
-        .fetch_one(&self.pool)
-        .await?;
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM repositories WHERE id = $1)")
+                .bind(id)
+                .fetch_one(&self.pool)
+                .await?;
 
         if !exists {
             return Err(GitError::repository_not_found(id.to_string()));
@@ -212,12 +213,11 @@ impl BranchService {
         input.validate().map_err(GitError::validation)?;
 
         // Vérifier que le repository existe
-        let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM repositories WHERE id = $1)",
-        )
-        .bind(repository_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM repositories WHERE id = $1)")
+                .bind(repository_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         if !exists {
             return Err(GitError::repository_not_found(repository_id.to_string()));
@@ -233,7 +233,10 @@ impl BranchService {
         .await?;
 
         if branch_exists {
-            return Err(GitError::branch_exists(&input.name, repository_id.to_string()));
+            return Err(GitError::branch_exists(
+                &input.name,
+                repository_id.to_string(),
+            ));
         }
 
         // Convertir en Branch
@@ -281,12 +284,11 @@ impl BranchService {
         pagination: PaginationQuery,
     ) -> GitResult<BranchListResponse> {
         // Vérifier que le repository existe
-        let exists: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM repositories WHERE id = $1)",
-        )
-        .bind(repository_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let exists: bool =
+            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM repositories WHERE id = $1)")
+                .bind(repository_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         if !exists {
             return Err(GitError::repository_not_found(repository_id.to_string()));
@@ -296,12 +298,11 @@ impl BranchService {
         let limit = pagination.limit();
 
         // Compter le total
-        let total: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM branches WHERE repository_id = $1",
-        )
-        .bind(repository_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let total: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM branches WHERE repository_id = $1")
+                .bind(repository_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         // Récupérer les données
         let branches = sqlx::query_as::<_, BranchRow>(
@@ -344,7 +345,10 @@ impl BranchService {
         .await?;
 
         if !exists {
-            return Err(GitError::branch_not_found(id.to_string(), repository_id.to_string()));
+            return Err(GitError::branch_not_found(
+                id.to_string(),
+                repository_id.to_string(),
+            ));
         }
 
         sqlx::query("DELETE FROM branches WHERE id = $1")
@@ -409,7 +413,6 @@ impl From<BranchRow> for Branch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mockall::predicate::*;
 
     // Tests unitaires pour la validation
     #[test]

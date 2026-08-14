@@ -2,6 +2,7 @@
 // Tardigrade-CI Git Module - useRepositories Hook
 // =============================================================================
 
+import { getApiErrorMessage } from '../utils/formatters';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -61,8 +62,8 @@ export function useRepositories(initialPage: number = 1, initialPageSize: number
         currentPage: response.page,
         pageSize: response.pageSize,
       });
-    } catch (error: any) {
-      const errorMessage = error.error || 'Impossible de charger les repositories';
+    } catch (error: unknown) {
+      const errorMessage = getApiErrorMessage(error, 'Impossible de charger les repositories');
       setState((prev) => ({
         ...prev,
         loading: false,
@@ -91,8 +92,8 @@ export function useRepositories(initialPage: number = 1, initialPageSize: number
         navigate(`/repositories/${repository.id}`);
         
         return repository;
-      } catch (error: any) {
-        const errorMessage = error.error || 'Impossible de créer le repository';
+      } catch (error: unknown) {
+        const errorMessage = getApiErrorMessage(error, 'Impossible de créer le repository');
         toast.error(errorMessage);
         throw error;
       }
@@ -114,8 +115,8 @@ export function useRepositories(initialPage: number = 1, initialPageSize: number
         
         // Recharger la liste
         await fetchRepositories();
-      } catch (error: any) {
-        const errorMessage = error.error || 'Impossible de supprimer le repository';
+      } catch (error: unknown) {
+        const errorMessage = getApiErrorMessage(error, 'Impossible de supprimer le repository');
         toast.error(errorMessage);
         throw error;
       }

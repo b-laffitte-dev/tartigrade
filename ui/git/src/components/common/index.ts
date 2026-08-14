@@ -28,3 +28,10 @@ export type { BadgeProps } from './Badge';
 
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
+
+export { ModalProvider } from './ModalProvider';
+export { ModalContext } from './modalContext';
+export type { ModalState, ModalContextValue } from './modalContext';
+export { useModal } from './useModal';
+
+

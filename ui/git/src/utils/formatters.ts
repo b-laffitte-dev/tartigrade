@@ -221,6 +221,34 @@ export function formatTime(seconds: number): string {
 }
 
 // ==----------------------------------------------------------------------------
+// Gestion des erreurs API
+// ==----------------------------------------------------------------------------
+
+/**
+ * Extrait le message d'erreur d'une erreur rejetée par le service API.
+ *
+ * Le service (`gitService.ts`) rejette systématiquement des objets de la forme
+ * `{ error: string, status: number }`. Cette fonction garantit un message
+ * exploitable quel que soit le type réellement rejeté.
+ *
+ * @param error - Erreur rejetée par le service API (typée `unknown`).
+ * @param fallback - Message renvoyé si aucune information exploitable n'est trouvée.
+ * @returns Le message d'erreur à afficher.
+ */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === 'object' && error !== null && 'error' in error) {
+    const message = (error as { error: unknown }).error;
+    if (typeof message === 'string' && message.length > 0) {
+      return message;
+    }
+  }
+  if (typeof error === 'string' && error.length > 0) {
+    return error;
+  }
+  return fallback;
+}
+
+// ==----------------------------------------------------------------------------
 // Tests unitaires
 // ==----------------------------------------------------------------------------
 

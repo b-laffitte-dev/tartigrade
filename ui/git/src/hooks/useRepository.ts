@@ -2,6 +2,7 @@
 // Tardigrade-CI Git Module - useRepository Hook
 // =============================================================================
 
+import { getApiErrorMessage } from '../utils/formatters';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -53,8 +54,8 @@ export function useRepository() {
         loading: false,
         error: null,
       });
-    } catch (error: any) {
-      const errorMessage = error.error || 'Impossible de charger le repository';
+    } catch (error: unknown) {
+      const errorMessage = getApiErrorMessage(error, 'Impossible de charger le repository');
       setState((prev) => ({
         ...prev,
         loading: false,
@@ -82,8 +83,8 @@ export function useRepository() {
         await fetchRepository();
         
         return repository;
-      } catch (error: any) {
-        const errorMessage = error.error || 'Impossible de mettre à jour le repository';
+      } catch (error: unknown) {
+        const errorMessage = getApiErrorMessage(error, 'Impossible de mettre à jour le repository');
         toast.error(errorMessage);
         throw error;
       }
@@ -103,8 +104,8 @@ export function useRepository() {
       await GitService.repositories.delete(id);
       toast.success('Repository supprimé avec succès');
       navigate('/repositories');
-    } catch (error: any) {
-      const errorMessage = error.error || 'Impossible de supprimer le repository';
+    } catch (error: unknown) {
+      const errorMessage = getApiErrorMessage(error, 'Impossible de supprimer le repository');
       toast.error(errorMessage);
       throw error;
     }
@@ -123,8 +124,8 @@ export function useRepository() {
         await fetchRepository();
         
         return branch;
-      } catch (error: any) {
-        const errorMessage = error.error || 'Impossible de créer la branche';
+      } catch (error: unknown) {
+        const errorMessage = getApiErrorMessage(error, 'Impossible de créer la branche');
         toast.error(errorMessage);
         throw error;
       }
@@ -147,8 +148,8 @@ export function useRepository() {
         
         // Rafraîchir
         await fetchRepository();
-      } catch (error: any) {
-        const errorMessage = error.error || 'Impossible de supprimer la branche';
+      } catch (error: unknown) {
+        const errorMessage = getApiErrorMessage(error, 'Impossible de supprimer la branche');
         toast.error(errorMessage);
         throw error;
       }

@@ -86,7 +86,7 @@ impl ModuleConfig {
 }
 
 /// Configuration spécifique pour le module Git
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct GitModuleConfig {
     #[serde(flatten)]
     pub base: ModuleConfig,
@@ -94,19 +94,10 @@ pub struct GitModuleConfig {
     pub storage_path: Option<String>,
 }
 
-impl Default for GitModuleConfig {
-    fn default() -> Self {
-        Self {
-            base: ModuleConfig::default(),
-            storage_path: None,
-        }
-    }
-}
-
 impl GitModuleConfig {
     pub fn load<P: AsRef<Path>>(config_path: P) -> Result<Self, config::ConfigError> {
         let config_path = config_path.as_ref();
-        let mut builder = Config::builder()
+        let builder = Config::builder()
             .add_source(File::from(config_path).format(FileFormat::Toml))
             .add_source(Environment::with_prefix("TARDIGRADE_GIT"));
 

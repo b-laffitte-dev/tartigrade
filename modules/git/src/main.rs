@@ -2,30 +2,18 @@
 //!
 //! Lance le serveur HTTP Axum et configure le logging.
 
-use axum::Router;
-use config::{Config, Environment};
 use std::net::SocketAddr;
-use tokio::net::TcpListener;
 use tardigrade_git::{config::GitConfig, routes::create_router_with_config};
-use tardigrade_common::ModuleConfig;
+use tokio::net::TcpListener;
 use tracing_subscriber::{fmt, EnvFilter};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Charger la configuration depuis les variables d'environnement
-    let git_config = match GitConfig::load("modules/git/config.toml") {
-        Ok(config) => config,
-        Err(_) => {
-            // Si le fichier n'existe pas, utiliser la configuration depuis l'environnement uniquement
-            use config::{Config, Environment};
-            let mut builder = Config::builder()
-                .add_source(Environment::with_prefix("TARDIGRADE_GIT").prefix_separator("__").separator("__"));
-            match builder.build()?.try_deserialize::<GitConfig>() {
-                Ok(config) => config,
-                Err(_) => GitConfig::default(),
-            }
-        }
-    };
+    // Charger la configuration depuis le fichier puis les variables d'environnement.
+    // `GitConfig::load` ajoute déjà la source `Environment`; en cas d'absence du
+    // fichier de configuration, on retombe sur les valeurs par défaut.
+    let git_config =
+        GitConfig::load("modules/git/config.toml").unwrap_or_else(|_| GitConfig::default());
     let module_config = &git_config.base.base;
 
     tracing::info!(
@@ -77,8 +65,6 @@ fn setup_logging(log_level: &str) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_version_constant() {
         assert!(!tardigrade_git::VERSION.is_empty());

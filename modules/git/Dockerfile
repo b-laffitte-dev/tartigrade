@@ -14,11 +14,10 @@
 # -----------------------------------------------------------------------------
 FROM rust:1.97-slim AS builder
 
-# Installer les dépendances nécessaires pour le build
+# Installer les dépendances nécessaires pour le build.
+# Avec sqlx en mode rustls, aucune bibliothèque SSL native n'est requise.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        pkg-config \
-        libssl-dev \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,10 +48,10 @@ RUN cargo build --release --bin tardigrade-git
 # -----------------------------------------------------------------------------
 FROM debian:bookworm-slim
 
-# Installer les dépendances minimales pour le runtime
+# Installer les dépendances minimales pour le runtime.
+# rustls évite toute dépendance native à OpenSSL ; curl reste pour le healthcheck.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        libssl3 \
         ca-certificates \
         curl \
     && rm -rf /var/lib/apt/lists/*

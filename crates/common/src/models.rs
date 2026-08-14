@@ -85,6 +85,12 @@ pub struct Timestamps {
     pub updated_at: DateTime<Utc>,
 }
 
+impl Default for Timestamps {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Timestamps {
     pub fn new() -> Self {
         let now = Utc::now();

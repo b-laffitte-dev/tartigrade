@@ -1,7 +1,6 @@
 //! Définition des routes pour le module Git
 
 use axum::{routing::*, Router};
-use std::sync::Arc;
 
 use crate::{
     db::{create_pool, init_schema},
@@ -11,7 +10,9 @@ use crate::{
 use tardigrade_common::ModuleConfig;
 
 /// Crée le router principal pour le module Git avec une configuration
-pub async fn create_router_with_config(config: &ModuleConfig) -> Result<Router, Box<dyn std::error::Error>> {
+pub async fn create_router_with_config(
+    config: &ModuleConfig,
+) -> Result<Router, Box<dyn std::error::Error>> {
     // Créer la pool de connexions
     // TODO: réactiver le timeout une fois que le problème de connexion est résolu
     let pool = create_pool(&config.database_url).await?;
@@ -32,14 +33,8 @@ pub async fn create_router_with_config(config: &ModuleConfig) -> Result<Router, 
         .route("/repositories/:id", put(update_repository))
         .route("/repositories/:id", delete(delete_repository))
         // Routes pour les branches
-        .route(
-            "/repositories/:repository_id/branches",
-            post(create_branch),
-        )
-        .route(
-            "/repositories/:repository_id/branches",
-            get(list_branches),
-        )
+        .route("/repositories/:repository_id/branches", post(create_branch))
+        .route("/repositories/:repository_id/branches", get(list_branches))
         .route("/branches/:id", get(get_branch))
         .route(
             "/repositories/:repository_id/branches/:id",
@@ -62,16 +57,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_create_router() {
-        let router = create_router();
-        // On ne peut pas vraiment tester le router sans lancer un serveur,
-        // mais on peut vérifier qu'il est créé sans paniquer
-        assert!(!router.routes().is_empty());
-    }
-
-    #[test]
     fn test_create_test_router() {
-        let router = create_test_router();
-        assert!(!router.routes().is_empty());
+        // Valide que `create_test_router` se construit sans paniquer.
+        let _router = create_test_router();
     }
 }

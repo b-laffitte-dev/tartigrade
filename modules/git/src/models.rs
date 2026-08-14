@@ -214,21 +214,12 @@ impl Branch {
 }
 
 /// Données pour créer une branche
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CreateBranchInput {
     /// Nom de la branche
     pub name: String,
     /// Hash du commit initial (optionnel)
     pub commit_hash: Option<String>,
-}
-
-impl Default for CreateBranchInput {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            commit_hash: None,
-        }
-    }
 }
 
 impl CreateBranchInput {
@@ -274,11 +265,7 @@ pub struct Commit {
 
 impl Commit {
     /// Crée un nouveau commit
-    pub fn new(
-        hash: impl Into<String>,
-        repository_id: Uuid,
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn new(hash: impl Into<String>, repository_id: Uuid, message: impl Into<String>) -> Self {
         Self {
             hash: hash.into(),
             repository_id,

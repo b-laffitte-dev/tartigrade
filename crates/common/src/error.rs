@@ -78,7 +78,7 @@ impl From<sqlx::Error> for TardigradeError {
 
 /// Conversion depuis std::io::Error
 impl From<std::io::Error> for TardigradeError {
-    fn from(err: std::io::Error) -> Self {
+    fn from(_err: std::io::Error) -> Self {
         Self::InternalServerError
     }
 }

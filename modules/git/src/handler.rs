@@ -199,15 +199,11 @@ pub async fn api_info() -> Json<serde_json::Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::body::Body;
-    use axum::http::Request;
-    use tower::ServiceExt;
 
     #[tokio::test]
     async fn test_health_check_handler() {
         let response = health_check().await.unwrap();
-        let json = response.0 ;
+        let json = response.0;
         assert_eq!(json["status"], "healthy");
     }
-
 }

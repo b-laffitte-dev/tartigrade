@@ -5,7 +5,7 @@ use std::path::Path;
 use tardigrade_common::GitModuleConfig;
 
 /// Configuration spécifique au module Git
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct GitConfig {
     /// Configuration de base
     #[serde(flatten)]
@@ -19,16 +19,6 @@ pub struct GitConfig {
 
 fn default_enable_hooks() -> bool {
     false
-}
-
-impl Default for GitConfig {
-    fn default() -> Self {
-        Self {
-            base: GitModuleConfig::default(),
-            git_port: None,
-            enable_hooks: false,
-        }
-    }
 }
 
 impl GitConfig {
@@ -47,9 +37,8 @@ impl GitConfig {
 
         // En mode dev, permettre de charger depuis le répertoire courant
         if std::env::var("RUST_ENV").as_deref() != Ok("prod") {
-            builder = builder.add_source(
-                config::File::with_name("modules/git/local").required(false),
-            );
+            builder =
+                builder.add_source(config::File::with_name("modules/git/local").required(false));
         }
 
         let config: Self = builder.build()?.try_deserialize()?;
@@ -70,7 +59,8 @@ pub fn default_dev_config() -> GitConfig {
                 name: "tardigrade-git".to_string(),
                 environment: "dev".to_string(),
                 port: 3001,
-                database_url: "postgres://postgres:postgres@localhost:5432/tardigrade_git".to_string(),
+                database_url: "postgres://postgres:postgres@localhost:5432/tardigrade_git"
+                    .to_string(),
                 database_timeout: 30,
                 log_level: "debug".to_string(),
                 debug: true,
