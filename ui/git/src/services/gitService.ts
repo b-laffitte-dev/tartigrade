@@ -95,7 +95,7 @@ interface RawBranch {
   created_at: string;
 }
 
-function mapRepository(raw: RawRepository): Repository {
+export function mapRepository(raw: RawRepository): Repository {
   return {
     id: raw.id,
     name: raw.name,
@@ -108,7 +108,7 @@ function mapRepository(raw: RawRepository): Repository {
   };
 }
 
-function mapBranch(raw: RawBranch): Branch {
+export function mapBranch(raw: RawBranch): Branch {
   return {
     id: raw.id,
     repositoryId: raw.repository_id,

@@ -43,10 +43,15 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/tardigrade_git
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/tardigrade_git_test
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Create test database
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -c "CREATE DATABASE tardigrade_git_test;"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

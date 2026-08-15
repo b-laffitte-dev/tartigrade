@@ -17,7 +17,7 @@ env:
 
 jobs:
   check:
-    name: Lint & build
+    name: Lint, build & test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,6 +39,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Test
+        run: npm run test -- --run
 
       - name: Build
         run: npm run build
