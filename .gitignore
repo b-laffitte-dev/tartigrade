@@ -25,7 +25,6 @@ Thumbs.db
 
 # Rust
 /target/
-Cargo.lock
 *.rs.bk
 
 # Node.js
