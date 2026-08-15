@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+/// <reference types="vitest" />
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
@@ -43,7 +44,13 @@ export default defineConfig({
     },
   },
   
-  // Variables d'environnement
+  // Configuration des tests (vitest)
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: [],
+  },
+    // Variables d'environnement
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
     __API_BASE_URL__: JSON.stringify(process.env.VITE_API_BASE_URL || 'http://localhost:3001/api'),
