@@ -72,6 +72,53 @@ api.interceptors.response.use(
 );
 
 // ==----------------------------------------------------------------------------
+// Mappers snake_case (API Rust) -> camelCase (TypeScript)
+// ==----------------------------------------------------------------------------
+
+/** Forme brute renvoyée par l'API Rust (snake_case). */
+interface RawRepository {
+  id: string;
+  name: string;
+  description: string | null;
+  is_private: boolean;
+  owner_id: string | null;
+  default_branch: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface RawBranch {
+  id: string;
+  repository_id: string;
+  name: string;
+  commit_hash: string | null;
+  created_at: string;
+}
+
+function mapRepository(raw: RawRepository): Repository {
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description,
+    isPrivate: raw.is_private,
+    ownerId: raw.owner_id,
+    defaultBranch: raw.default_branch,
+    createdAt: raw.created_at,
+    updatedAt: raw.updated_at,
+  };
+}
+
+function mapBranch(raw: RawBranch): Branch {
+  return {
+    id: raw.id,
+    repositoryId: raw.repository_id,
+    name: raw.name,
+    commitHash: raw.commit_hash,
+    createdAt: raw.created_at,
+  };
+}
+
+// ==----------------------------------------------------------------------------
 // Service pour les Repositories
 // ==----------------------------------------------------------------------------
 
@@ -80,16 +127,16 @@ export const GitRepositoryService = {
    * Crée un nouveau repository
    */
   async create(input: CreateRepositoryInput): Promise<Repository> {
-    const response = await api.post<Repository>('/repositories', input);
-    return response.data;
+    const response = await api.post<RawRepository>('/repositories', input);
+    return mapRepository(response.data);
   },
 
   /**
    * Récupère un repository par ID
    */
   async getById(id: string): Promise<Repository> {
-    const response = await api.get<Repository>(`/repositories/${id}`);
-    return response.data;
+    const response = await api.get<RawRepository>(`/repositories/${id}`);
+    return mapRepository(response.data);
   },
 
   /**
@@ -99,16 +146,19 @@ export const GitRepositoryService = {
     page?: number;
     pageSize?: number;
   }): Promise<PaginatedResponse<Repository>> {
-    const response = await api.get<PaginatedResponse<Repository>>('/repositories', { params });
-    return response.data;
+    const response = await api.get<PaginatedResponse<RawRepository>>('/repositories', { params });
+    return {
+      ...response.data,
+      data: response.data.data.map(mapRepository),
+    };
   },
 
   /**
    * Met à jour un repository
    */
   async update(id: string, input: UpdateRepositoryInput): Promise<Repository> {
-    const response = await api.put<Repository>(`/repositories/${id}`, input);
-    return response.data;
+    const response = await api.put<RawRepository>(`/repositories/${id}`, input);
+    return mapRepository(response.data);
   },
 
   /**
@@ -124,12 +174,12 @@ export const GitRepositoryService = {
   async getByName(name: string): Promise<Repository> {
     // Note: Pour l'instant, on liste tous et on filtre côté client
     // En production, on devrait avoir un endpoint /repositories/by-name/{name}
-    const response = await api.get<PaginatedResponse<Repository>>('/repositories');
+    const response = await api.get<PaginatedResponse<RawRepository>>('/repositories');
     const repository = response.data.data.find((repo) => repo.name === name);
     if (!repository) {
       throw { error: `Repository '${name}' not found`, status: 404 };
     }
-    return repository;
+    return mapRepository(repository);
   },
 };
 
@@ -142,16 +192,16 @@ export const GitBranchService = {
    * Crée une nouvelle branche
    */
   async create(repositoryId: string, input: CreateBranchInput): Promise<Branch> {
-    const response = await api.post<Branch>(`/repositories/${repositoryId}/branches`, input);
-    return response.data;
+    const response = await api.post<RawBranch>(`/repositories/${repositoryId}/branches`, input);
+    return mapBranch(response.data);
   },
 
   /**
    * Récupère une branche par ID
    */
   async getById(id: string): Promise<Branch> {
-    const response = await api.get<Branch>(`/branches/${id}`);
-    return response.data;
+    const response = await api.get<RawBranch>(`/branches/${id}`);
+    return mapBranch(response.data);
   },
 
   /**
@@ -161,11 +211,14 @@ export const GitBranchService = {
     page?: number;
     pageSize?: number;
   }): Promise<PaginatedResponse<Branch>> {
-    const response = await api.get<PaginatedResponse<Branch>>(
+    const response = await api.get<PaginatedResponse<RawBranch>>(
       `/repositories/${repositoryId}/branches`,
       { params }
     );
-    return response.data;
+    return {
+      ...response.data,
+      data: response.data.data.map(mapBranch),
+    };
   },
 
   /**
