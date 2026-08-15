@@ -1,0 +1,44 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: ["main", "feature/**"]
+    paths:
+      - "ui/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "ui/**"
+      - ".github/workflows/frontend-ci.yml"
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  check:
+    name: Lint & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui/git
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: ui/git/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

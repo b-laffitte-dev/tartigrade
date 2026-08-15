@@ -1,0 +1,27 @@
+# =============================================================================
+# Tardigrade Git Module - Configuration
+# =============================================================================
+#
+# Ce fichier configure le module Git de Tardigrade-CI.
+# Les valeurs peuvent être écrasées par des variables d'environnement avec
+# le préfixe TARDIGRADE_GIT__ (ex: TARDIGRADE_GIT__PORT=4000)
+#
+# =============================================================================
+
+[base]
+name = "tardigrade-git"
+environment = "dev"  # dev, test, staging, prod
+port = 3001
+
+# Configuration de la base de données PostgreSQL
+database_url = "postgres://postgres:postgres@localhost:5432/tardigrade_git"
+database_timeout = 30
+
+# Configuration du logging
+log_level = "debug"  # debug, info, warn, error
+
+# Mode debug
+debug = true
+
+# Chemin de stockage (optionnel, pour plus tard)
+storage_path = "./data/git"
