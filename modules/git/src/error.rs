@@ -76,6 +76,22 @@ impl From<sqlx::Error> for GitError {
     fn from(err: sqlx::Error) -> Self {
         match err {
             sqlx::Error::RowNotFound => Self::repository_not_found("unknown"),
+            sqlx::Error::Database(db_err) => {
+                // PostgreSQL code 23505 = unique_violation.
+                // On mappe vers un conflit 409 plutôt qu'une 500 générique.
+                if db_err.code().as_deref() == Some("23505") {
+                    let msg = db_err.to_string();
+                    // Le message contient le nom de la contrainte violée
+                    // (ex: "repositories_name_key" ou "idx_branches_repo_name").
+                    if msg.contains("branches") {
+                        Self::BranchAlreadyExists("unknown".to_string(), "unknown".to_string())
+                    } else {
+                        Self::RepositoryAlreadyExists("unknown".to_string())
+                    }
+                } else {
+                    Self::database(db_err.to_string())
+                }
+            }
             _ => Self::database(err.to_string()),
         }
     }
