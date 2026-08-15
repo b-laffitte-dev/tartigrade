@@ -33,11 +33,26 @@ pub async fn check_connection(pool: &DbPool) -> Result<(), sqlx::Error> {
 }
 
 /// Exécute une migration SQL
+///
+/// # Déprécié
+///
+/// Préférez les migrations versionnées via `sqlx::migrate!` (dossier
+/// `modules/git/migrations/`). Cette fonction est conservée pour la
+/// rétrocompatibilité.
+#[deprecated(note = "Utiliser sqlx::migrate! à la place")]
 pub async fn run_migration(pool: &DbPool, sql: &str) -> Result<(), sqlx::Error> {
     sqlx::query(sql).execute(pool).await.map(|_| ())
 }
 
 /// Initialise le schéma de la base de données
+///
+/// # Déprécié
+///
+/// Le schéma est désormais créé via les migrations versionnées
+/// (`sqlx::migrate!`, dossier `modules/git/migrations/`). Cette fonction
+/// est conservée pour la rétrocompatibilité avec les environnements
+/// existants qui ne souhaitent pas utiliser le système de migrations.
+#[deprecated(note = "Utiliser sqlx::migrate! à la place")]
 pub async fn init_schema(pool: &DbPool) -> Result<(), sqlx::Error> {
     // Créer la table repositories
     sqlx::query(
@@ -154,6 +169,7 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "Requiert une base de données PostgreSQL en cours d'exécution"]
+    #[allow(deprecated)]
     async fn test_init_schema() {
         let database_url = env::var("TEST_DATABASE_URL")
             .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/test".to_string());

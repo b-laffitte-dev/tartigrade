@@ -2,10 +2,7 @@
 
 use axum::{routing::*, Router};
 
-use crate::{
-    db::{create_pool, init_schema},
-    handler::*,
-};
+use crate::{db::create_pool, handler::*};
 
 use tardigrade_common::ModuleConfig;
 
@@ -17,8 +14,12 @@ pub async fn create_router_with_config(
     // TODO: réactiver le timeout une fois que le problème de connexion est résolu
     let pool = create_pool(&config.database_url).await?;
 
-    // Initialiser le schéma
-    init_schema(&pool).await?;
+    // Exécuter les migrations SQL versionnées.
+    // Les fichiers sont lus depuis `modules/git/migrations/` (macro sqlx::migrate!).
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     let state = AppState::new(pool);
 

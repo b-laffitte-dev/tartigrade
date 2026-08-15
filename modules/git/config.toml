@@ -6,9 +6,11 @@
 # Les valeurs peuvent être écrasées par des variables d'environnement avec
 # le préfixe TARDIGRADE_GIT__ (ex: TARDIGRADE_GIT__PORT=4000)
 #
+# Note : les champs ci-dessous sont aplatis (serde flatten) dans
+# GitModuleConfig puis ModuleConfig ; ils doivent donc être à la racine
+# du TOML (et non sous une section [base]).
 # =============================================================================
 
-[base]
 name = "tardigrade-git"
 environment = "dev"  # dev, test, staging, prod
 port = 3001
